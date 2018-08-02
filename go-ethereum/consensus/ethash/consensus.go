@@ -34,7 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// Ethash proof-of-work protocol constants.
+// Ethash proof-of-work protocol constants.区块奖励
 var (
 	FrontierBlockReward    *big.Int = big.NewInt(5e+18) // Block reward in wei for successfully mining a block
 	ByzantiumBlockReward   *big.Int = big.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from Byzantium
@@ -552,3 +552,4 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	}
 	state.AddBalance(header.Coinbase, reward)
 }
+

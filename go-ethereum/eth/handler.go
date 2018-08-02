@@ -200,6 +200,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
+//订阅事件，将交易广播给其他节点
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
@@ -751,7 +752,7 @@ func (pm *ProtocolManager) minedBroadcastLoop() {
 		}
 	}
 }
-
+//接收TxEvent事件
 func (pm *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {

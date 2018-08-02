@@ -17,15 +17,15 @@
 package types
 
 import (
-	"container/heap"
 	"errors"
-	"io"
 	"math/big"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"io"
 	"github.com/ethereum/go-ethereum/crypto"
+	"container/heap"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -41,6 +41,16 @@ type Transaction struct {
 	hash atomic.Value
 	size atomic.Value
 	from atomic.Value
+
+	//加入交易类型
+	transactionType string
+
+	//随机数
+	randomNum uint64
+
+	//发送人地址
+	userAdd common.Address
+
 }
 
 type txdata struct {
@@ -59,8 +69,8 @@ type txdata struct {
 	// This is only used when marshaling to JSON.
 	Hash *common.Hash `json:"hash" rlp:"-"`
 
-	//randomNum
-	RandomNum int64
+
+
 
 }
 
@@ -74,25 +84,27 @@ type txdataMarshaling struct {
 	R            *hexutil.Big
 	S            *hexutil.Big
 
-	//randomNum
-	RandomNum  hexutil.Uint64
+
+}
+/*
+	交易函数加入交易类型传参
+ */
+func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte,tranType string) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data,tranType)
 }
 
-func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data)
-}
 //合约交易
-func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
-	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data)
+func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte,tranType string) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data,tranType)
 }
 
 //合约中的投票交易
-func NewContractVoteCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, dataNum []byte)  *Transaction {
-	return newTransaction(nonce,nil, amount,gasLimit,gasPrice,dataNum)
+func NewContractVoteCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, dataNum []byte, tranType string)  *Transaction {
+	return newTransaction(nonce,nil, amount,gasLimit,gasPrice,dataNum,tranType)
 }
 
 //当为投票交易时，data []byte为投票数的hash作为内容
-func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
+func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, tranType string) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -113,10 +125,23 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	if gasPrice != nil {
 		d.Price.Set(gasPrice)
 	}
-
-	return &Transaction{data: d}
+	//返回交易类型
+	return &Transaction{data: d,transactionType:tranType}
 }
 
+
+//返回tranType的get方法实例
+func (tx *Transaction) GetTranType() string {
+	return tx.transactionType
+}
+//返回随机数
+func (tx *Transaction)getrandomNum() uint64  {
+	return tx.randomNum
+}
+//返回投票人地址
+func (tx *Transaction) GetAddress() common.Address  {
+	return tx.userAdd
+}
 // ChainId returns which chain id this transaction was signed for (if at all)
 func (tx *Transaction) ChainId() *big.Int {
 	return deriveChainId(tx.data.V)
@@ -187,7 +212,6 @@ func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amo
 func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
 func (tx *Transaction) CheckNonce() bool   { return true }
 
-//get randomNum
 
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.

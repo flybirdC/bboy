@@ -33,6 +33,7 @@ import (
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/params"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+	"github.com/ethereum/go-ethereum/signer/core"
 )
 
 const (
@@ -76,6 +77,9 @@ var (
 	// than some meaningful limit a user might use. This is not a consensus error
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
+
+	//返回交易类型下重复投票错误，避免交易池中重复的同一用户重复投票数
+	ErrDoubleVoteWitness = errors.New("double vote witness")
 )
 
 var (
@@ -552,6 +556,7 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
+//判断一人一票，验证交易有效性
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
 	if tx.Size() > 32*1024 {
@@ -592,6 +597,17 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Gas() < intrGas {
 		return ErrIntrinsicGas
 	}
+	//投票交易下判断交易池中是否为一人一票
+	if tx.GetTranType() == core.TransactionType0 {
+
+
+		//获取当前用户address , 如果非空则返回错误,保证当前打包区块中无双重投票
+		if pool.pending[from] != nil {
+			return ErrDoubleVoteWitness
+		}
+
+	}
+
 	return nil
 }
 
@@ -1179,7 +1195,7 @@ func (as *accountSet) add(addr common.Address) {
 // peeking into the pool in TxPool.Get without having to acquire the widely scoped
 // TxPool.mu mutex.
 type txLookup struct {
-	all  map[common.Hash]*types.Transaction
+	all  map[common.Hash]*types.Transaction   //当前所有可查询交易列表
 	lock sync.RWMutex
 }
 

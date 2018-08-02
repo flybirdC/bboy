@@ -476,7 +476,7 @@ func (self *worker) commitNewWork() {
 	for _, hash := range badUncles {
 		delete(self.possibleUncles, hash)
 	}
-	// Create the new block to seal with the consensus engine
+	// Create the new block to seal with the consensus engine 打包新区块
 	if work.Block, err = self.engine.Finalize(self.chain, header, work.state, work.txs, uncles, work.receipts); err != nil {
 		log.Error("Failed to finalize block for sealing", "err", err)
 		return
@@ -517,7 +517,7 @@ func (self *worker) updateSnapshot() {
 	)
 	self.snapshotState = self.current.state.Copy()
 }
-
+//交易提交到EVM执行
 func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, bc *core.BlockChain, coinbase common.Address) {
 	if env.gasPool == nil {
 		env.gasPool = new(core.GasPool).AddGas(env.header.GasLimit)

@@ -883,6 +883,10 @@ type RPCTransaction struct {
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
+
+	// 增加合约类型字段
+	ContractionType string `json:"contractionType"`
+
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -907,6 +911,8 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		V:        (*hexutil.Big)(v),
 		R:        (*hexutil.Big)(r),
 		S:        (*hexutil.Big)(s),
+		ContractionType:tx.GetTranType(),
+
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = blockHash
@@ -1132,7 +1138,7 @@ type SendTxArgs struct {
 	Input *hexutil.Bytes `json:"input"`
 
 	// 增加合约类型字段
-	ContractionType string
+	ContractionType string `json:"contractionType"`
 
 }
 
@@ -1189,11 +1195,13 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		//如果合约类型为投票类型contractType = VoteWitness 执行投票函数，否则，执行合约函数
 		if string(args.ContractionType) == TransactionType0 {
 			//调用投票合约
-			return types.NewContractVoteCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+			//调用随机函数
+			input = RandNum()
+			return types.NewContractVoteCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input,TransactionType0)
 		}
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input,TransactionType2)
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input,TransactionType1)
 }
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.

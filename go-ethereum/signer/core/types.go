@@ -106,9 +106,11 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		//判断是否为投票合约类型,是则调用投票合约
 		if string(args.ContractionType) == TransactionType0 {
 			//调用投票合约
-			return types.NewContractVoteCreation(uint64(args.Nonce),(*big.Int)(&args.Value),uint64(args.Gas),(*big.Int)(&args.GasPrice),input)
+			//调用随机函数
+			input = RandNum()
+			return types.NewContractVoteCreation(uint64(args.Nonce),(*big.Int)(&args.Value),uint64(args.Gas),(*big.Int)(&args.GasPrice),input,TransactionType0)
 		}
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input)
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input,TransactionType2)
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input)
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input,TransactionType1)
 }
